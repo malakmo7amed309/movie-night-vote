@@ -1,29 +1,69 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createClient } from '@supabase/supabase-js'
 
+function VoteIcon({ k, className = '' }) {
+  const c = { viewBox: '0 0 24 24', className, fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true }
+  if (k === 'fire') return <svg {...c} fill="#f97316" stroke="#c2410c"><path d="M12 2c1 4 6 6 6 12a6 6 0 0 1-12 0c0-3 2-4 2-7 2 1 3 2 3 4 1-3 1-6 1-9z" /></svg>
+  if (k === 'sure') return <svg {...c}><path d="M7 11v9H4v-9zM7 11l4-8c2 0 3 1.500 2.500 3.500L13 10h6a2 2 0 0 1 2 2.300l-1.300 6A2 2 0 0 1 17.800 20H7" /></svg>
+  if (k === 'nope') return <svg {...c}><path d="M7 13V4H4v9zM7 13l4 8c2 0 3-1.500 2.500-3.500L13 14h6a2 2 0 0 0 2-2.300l-1.300-6A2 2 0 0 0 17.800 4H7" /></svg>
+  return <svg {...c}><circle cx="12" cy="12" r="9" /><path d="M8 15h8M9 9.500v.5M15 9.500v.5" /></svg>
+}
+
+const POSTER_MOTIFS = [
+  <path key="a" d="M12 4l2.500 5 5.500.8-4 3.900.9 5.500L12 16.500 7.100 19.200 8 13.700 4 9.800l5.500-.8z" />,
+  <circle key="b" cx="12" cy="12" r="6" />,
+  <path key="c" d="M12 4l8 14H4z" />,
+  <path key="d" d="M13 3L6 13h5l-1 8 8-11h-5z" />,
+  <path key="e" d="M4 15c3-6 5-6 8 0s5 6 8 0" fill="none" stroke="currentColor" strokeWidth="2.500" strokeLinecap="round" />,
+  <path key="f" d="M12 3l9 9-9 9-9-9z" />,
+]
+
+function Poster({ title = '', className = '' }) {
+  let h = 0
+  for (const ch of title) h = (h * 31 + ch.charCodeAt(0)) >>> 0
+  const hue = h % 360
+  const motif = POSTER_MOTIFS[(h >> 3) % POSTER_MOTIFS.length]
+  const initials = title.split(/[\s:]+/).filter((w) => /^[A-Za-z0-9]/.test(w) && !/^(the|of|and|to|a)$/i.test(w)).slice(0, 2).map((w) => w[0].toUpperCase()).join('')
+  const id = 'pg' + h
+  return (
+    <svg viewBox="0 0 40 56" className={className} role="img" aria-label={`Poster for ${title}`}>
+      <defs>
+        <linearGradient id={id} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor={`hsl(${hue} 70% 45%)`} />
+          <stop offset="1" stopColor={`hsl(${(hue + 50) % 360} 65% 20%)`} />
+        </linearGradient>
+      </defs>
+      <rect width="40" height="56" rx="3" fill={`url(#${id})`} />
+      <rect x="2.500" y="2.500" width="35" height="51" rx="2" fill="none" stroke="rgba(255,255,255,.35)" strokeWidth=".8" />
+      <g transform="translate(8 8) scale(1)" color="rgba(255,255,255,.85)" fill="rgba(255,255,255,.85)"><svg viewBox="0 0 24 24" width="24" height="24">{motif}</svg></g>
+      <text x="20" y="46" textAnchor="middle" fontSize="9" fontWeight="700" fill="#fff" fontFamily="system-ui, sans-serif">{initials}</text>
+    </svg>
+  )
+}
+
 const supabase = createClient(
   'https://uijyoxkppndiyboguhzm.supabase.co',
   'sb_publishable_ntTZHgBcoK8a5_EQwVepIQ_60e9yDPg',
 )
 
 const VOTES = [
-  { v: -1, emoji: '👎', label: 'Nope' },
-  { v: 0, emoji: '😐', label: 'Meh' },
-  { v: 1, emoji: '👍', label: 'Sure' },
-  { v: 2, emoji: '🔥', label: 'Yes!' },
+  { v: -1, icon: 'nope', label: 'Nope' },
+  { v: 0, icon: 'meh', label: 'Meh' },
+  { v: 1, icon: 'sure', label: 'Sure' },
+  { v: 2, icon: 'fire', label: 'Yes!' },
 ]
 
 const QUICK_PICKS = [
-  ['🕷️', 'Spider-Man: Into the Spider-Verse'],
-  ['🚀', 'Interstellar'],
-  ['🧸', 'Toy Story'],
-  ['🦁', 'The Lion King'],
-  ['🌀', 'Inception'],
-  ['🦇', 'The Dark Knight'],
-  ['🐉', 'How to Train Your Dragon'],
-  ['🍝', 'Ratatouille'],
-  ['🧙', 'Harry Potter and the Prisoner of Azkaban'],
-  ['🤖', 'WALL-E'],
+  'Spider-Man: Into the Spider-Verse',
+  'Interstellar',
+  'Toy Story',
+  'The Lion King',
+  'Inception',
+  'The Dark Knight',
+  'How to Train Your Dragon',
+  'Ratatouille',
+  'Harry Potter and the Prisoner of Azkaban',
+  'WALL-E',
 ]
 
 const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ'
@@ -155,14 +195,14 @@ function VoteRow({ movie, myVote, onVote, onDelete, canDelete }) {
   return (
     <div className="anim-rise ticket flex flex-col gap-3 bg-[#f6e7c8] px-6 py-4 text-velvet sm:flex-row sm:items-center">
       <div className="flex min-w-0 flex-1 items-center gap-3">
-        <span className="text-3xl">{movie.emoji}</span>
+        <Poster title={movie.title} className="h-14 w-10 shrink-0" />
         <div className="min-w-0">
           <div className="truncate font-display text-2xl leading-tight tracking-wide">{movie.title}</div>
           <div className="text-xs text-velvet/55">added by {movie.by}</div>
         </div>
         {canDelete && (
           <button onClick={onDelete} title="Remove" className="ml-auto rounded-full px-2 text-velvet/30 transition hover:text-curtain sm:ml-2">
-            ✕
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
           </button>
         )}
       </div>
@@ -175,7 +215,7 @@ function VoteRow({ movie, myVote, onVote, onDelete, canDelete }) {
               myVote === o.v ? 'bg-velvet text-white shadow-md scale-105' : 'bg-velvet/10 hover:bg-velvet/20'
             }`}
           >
-            <span>{o.emoji}</span>
+            <VoteIcon k={o.icon} className="h-6 w-6" />
             <span className="text-[10px] font-bold uppercase tracking-wide opacity-70">{o.label}</span>
           </button>
         ))}
@@ -193,9 +233,9 @@ function Leaderboard({ rows, totalVoters }) {
           <div className="w-6 text-right font-display text-xl text-gold/70">{i + 1}</div>
           <div className="min-w-0 flex-1">
             <div className="flex justify-between gap-2 text-sm">
-              <span className="truncate font-medium">{r.emoji} {r.title}</span>
+              <span className="truncate font-medium">{r.title}</span>
               <span className="shrink-0 text-xs text-white/50">
-                {r.fires > 0 && `🔥${r.fires} `}{r.nopes > 0 && `👎${r.nopes} `}· {r.voters}/{totalVoters}
+                {r.fires > 0 && <span className="mr-1.5 inline-flex items-center gap-0.5"><VoteIcon k="fire" className="h-3.5 w-3.5" />{r.fires}</span>}{r.nopes > 0 && <span className="mr-1.5 inline-flex items-center gap-0.5"><VoteIcon k="nope" className="h-3.5 w-3.5" />{r.nopes}</span>}· {r.voters}/{totalVoters}
               </span>
             </div>
             <div className="mt-1 h-2 overflow-hidden rounded-full bg-white/10">
@@ -231,17 +271,17 @@ function Reveal({ rows, roll, onClose }) {
         key={spinning ? 'spin' : 'win'}
         className={`ticket w-full max-w-lg bg-[#f6e7c8] px-8 py-10 text-center text-velvet ${spinning ? '' : 'anim-pop'}`}
       >
-        <div className="text-6xl">{shown.emoji}</div>
+        <div className="flex justify-center"><Poster title={shown.title} className="h-28 w-20" /></div>
         <div className="mt-2 font-display text-5xl leading-tight tracking-wide sm:text-6xl">{shown.title}</div>
         {!spinning && (
           <div className="mt-3 text-sm font-medium text-velvet/60">
-            {winner.score} points · {winner.fires} 🔥 · pitched by {winner.by}
+            {winner.score} points · {winner.fires} {winner.fires === 1 ? "fire vote" : "fire votes"} · pitched by {winner.by}
           </div>
         )}
       </div>
       {!spinning && (
         <button onClick={onClose} className="anim-rise rounded-2xl bg-gold px-8 py-3 font-display text-2xl tracking-wider text-velvet hover:brightness-110">
-          POPCORN TIME 🍿
+          POPCORN TIME
         </button>
       )}
     </div>
@@ -309,13 +349,13 @@ function Room({ code, name, me, onLeave }) {
     setTimeout(broadcast, 30)
   }
 
-  const addMovie = (t, emoji = '🎬') => {
+  const addMovie = (t) => {
     const clean = t.trim().slice(0, 48)
     if (!clean) return
     const exists = Object.values(stateRef.current.movies).some((m) => !m.delAt && m.title.toLowerCase() === clean.toLowerCase())
     if (exists) return
     const id = uid()
-    update((s) => ({ ...s, movies: { ...s.movies, [id]: { id, title: clean, emoji, by: name, byId: me, at: Date.now() } } }))
+    update((s) => ({ ...s, movies: { ...s.movies, [id]: { id, title: clean, by: name, byId: me, at: Date.now() } } }))
     setTitle('')
   }
 
@@ -336,7 +376,7 @@ function Room({ code, name, me, onLeave }) {
   const fullyVoted = rows.length > 0 && rows.every((r) => myBallot[r.id] !== undefined)
   const roll = state.roll
   const showReveal = roll && roll.at !== dismissedRoll && Date.now() - roll.at < 5 * 60 * 1000 && rows.length > 0
-  const suggestions = QUICK_PICKS.filter(([, t]) => !rows.some((r) => r.title.toLowerCase() === t.toLowerCase())).slice(0, 5)
+  const suggestions = QUICK_PICKS.filter((t) => !rows.some((r) => r.title.toLowerCase() === t.toLowerCase())).slice(0, 5)
 
   const copyLink = async () => {
     try {
@@ -352,7 +392,7 @@ function Room({ code, name, me, onLeave }) {
         <button onClick={onLeave} className="font-display text-3xl tracking-wide gold-shine">MOVIE NIGHT VOTE</button>
         <div className="flex items-center gap-2">
           <button onClick={copyLink} className="rounded-xl border border-gold/40 px-3 py-1.5 text-sm text-gold transition hover:bg-gold/10">
-            {copied ? 'Link copied ✓' : 'Copy invite link'}
+            {copied ? 'Link copied' : 'Copy invite link'}
           </button>
           <div className="rounded-xl bg-curtain px-4 py-1.5 font-display text-2xl tracking-[0.3em]" title="Room code">{code}</div>
         </div>
@@ -386,9 +426,9 @@ function Room({ code, name, me, onLeave }) {
       </form>
       {suggestions.length > 0 && (
         <div className="mb-6 flex flex-wrap gap-2">
-          {suggestions.map(([emoji, t]) => (
-            <button key={t} onClick={() => addMovie(t, emoji)} className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/70 transition hover:border-gold hover:text-gold">
-              + {emoji} {t.length > 26 ? t.slice(0, 24) + '…' : t}
+          {suggestions.map((t) => (
+            <button key={t} onClick={() => addMovie(t)} className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/70 transition hover:border-gold hover:text-gold">
+              + {t.length > 26 ? t.slice(0, 24) + '…' : t}
             </button>
           ))}
         </div>
@@ -397,7 +437,7 @@ function Room({ code, name, me, onLeave }) {
       {rows.length === 0 ? (
         <Marquee>
           <div className="py-8 text-center text-white/60">
-            <div className="text-5xl">🍿</div>
+            <div className="flex justify-center text-gold"><Poster title="Now boarding" className="h-16 w-12" /></div>
             <div className="mt-2 font-display text-3xl tracking-wide text-gold">NOW BOARDING</div>
             <p className="mt-1 text-sm">Add the first movie, then share code <b className="text-white">{code}</b> with your friends.</p>
           </div>
@@ -430,7 +470,7 @@ function Room({ code, name, me, onLeave }) {
             onClick={rollCredits}
             className="rounded-3xl bg-gradient-to-r from-curtain to-[#d4452f] py-5 font-display text-4xl tracking-widest text-white shadow-lg transition hover:brightness-110 active:translate-y-0.5"
           >
-            🎬 ROLL THE CREDITS
+            ROLL THE CREDITS
           </button>
           {!fullyVoted && <p className="-mt-5 text-center text-xs text-white/40">You have not voted on every movie yet. Anyone in the room can roll the credits.</p>}
         </div>
