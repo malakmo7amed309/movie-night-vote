@@ -6,13 +6,13 @@ Pick a movie together without the group-chat argument. One person starts a room,
 
 ## Standout feature
 
-A serverless, conflict-free live room. There is no host and no database: every device keeps the full room state and syncs it over Supabase Realtime broadcast. State merging is commutative (movies, per-person ballots and the final roll each merge by timestamp), so devices converge to the same result no matter the order messages arrive, and someone who joins late is caught up automatically. "Roll the credits" runs a ticket-slot animation and picks the winner deterministically (score, then 🔥 count, then a tie-break seeded by the roll), so everyone sees the identical pick.
+A serverless, conflict-free live room. There is no host and no database: every device keeps the full room state and syncs it over Supabase Realtime broadcast. State merging is commutative (movies, per-person ballots and the final roll each merge by timestamp), so devices converge to the same result no matter the order messages arrive, and someone who joins late is caught up automatically. "Roll the credits" runs a ticket-slot animation and picks the winner deterministically (score, then Yes! count, then a tie-break seeded by the roll), so everyone sees the identical pick.
 
 ## Features
 
 - Create a room or join with a 4-letter code or an invite link (`?room=ABCD`)
 - Suggest any movie or tap a quick pick; creators can remove their own suggestions
-- Vote per movie: 👎 Nope (-1), 😐 Meh (0), 👍 Sure (+1), 🔥 Yes! (+2)
+- Vote per movie: Nope (-1), Meh (0), Sure (+1), Yes! (+2)
 - Live box office leaderboard with fire and nope counts
 - Presence: see who is in the room right now
 - Your votes and the room survive a page refresh (localStorage)
